@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaleBot Pro — Vende en Automático</title>
+<meta name="description" content="Automatiza tus ventas con IA. Vincula tu negocio y vende 24/7.">
+<meta name="theme-color" content="#060A12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SaleBot Pro">
+<link rel="manifest" id="manifestLink">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script>
+// ── Inject PWA Manifest dynamically ──
+const manifest = {
+  name: "SaleBot Pro",
+  short_name: "SaleBot",
+  description: "Automatiza tus ventas con IA 24/7",
+  start_url: "./",
+  display: "standalone",
+  background_color: "#060A12",
+  theme_color: "#00E5A0",
+  orientation: "portrait-primary",
+  icons: [
+    { src: "data:image/svg+xml;base64," + btoa(`<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23060A12'/><rect width='192' height='192' rx='40' fill='url(%23g)'/><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300E5A0'/><stop offset='1' stop-color='%230077FF'/></linearGradient></defs><text x='96' y='125' font-size='90' text-anchor='middle' fill='%23060A12'>⚡</text></svg>`), sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+    { src: "data:image/svg+xml;base64," + btoa(`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23060A12'/><rect width='512' height='512' rx='100' fill='url(%23g)'/><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300E5A0'/><stop offset='1' stop-color='%230077FF'/></linearGradient></defs><text x='256' y='340' font-size='240' text-anchor='middle' fill='%23060A12'>⚡</text></svg>`), sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+  ],
+  shortcuts: [
+    { name: "Dashboard", url: "./#dashboard", description: "Ver estadísticas" },
+    { name: "Vincular Negocio", url: "./#negocio", description: "Conectar mi negocio" }
+  ],
+  categories: ["business", "productivity"]
+};
+const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+const manifestURL = URL.createObjectURL(blob);
+document.getElementById('manifestLink') || document.write('<link id="manifestLink">');
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('manifestLink').setAttribute('href', manifestURL);
+});
+
+// ── Register Service Worker inline ──
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'salebot-v1';
+    const ASSETS = ['./', './index.html'];
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(()=>{}));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(()=>caches.match('./'))));
+    });
+  `;
+  const swBlob = new Blob([swCode], {type:'text/javascript'});
+  const swURL = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL).catch(()=>{});
+}
+</script>
+<style>
+  :root {
+    --bg: #060A12;
+    --surface: #0D1520;
+    --surface2: #111D2E;
+    --border: #1A2D45;
+    --accent: #00E5A0;
+    --accent2: #0077FF;
+    --accent3: #FF4D6D;
+    --gold: #FFB800;
+    --text: #E8F0FE;
+    --muted: #6B8BB0;
+    --glow: rgba(0,229,160,0.15);
+    --glow2: rgba(0,119,255,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BG */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(0,119,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,119,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .app { position:relative; z-index:1; display:flex; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top:0; left:0; bottom:0;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--glow);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-badge {
+    font-size: 10px;
+    background: var(--accent3);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-top: -10px;
+  }
+
+  .nav { flex:1; padding: 16px 12px; display:flex; flex-direction:column; gap:4px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(0,229,160,0.08);
+    border-color: rgba(0,229,160,0.2);
+    color: var(--accent);
+  }
+
+  .nav-icon { font-size: 17px; width: 22px; text-align:center; }
+
+  .nav-badge {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--accent3);
+    color: white;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .nav-section {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 12px 4px;
+    opacity: 0.6;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .plan-badge {
+    background: linear-gradient(135deg, rgba(255,184,0,0.1), rgba(255,184,0,0.05));
+    border: 1px solid rgba(255,184,0,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 12px;
+  }
+
+  .plan-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    height: 64px;
+    background: rgba(13,21,32,0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    position: sticky;
+    top: 0; z-index: 50;
+  }
+
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    flex: 1;
+  }
+
+  .topbar-actions { display:flex; align-items:center; gap: 10px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #00C980);
+    color: #060A12;
+    box-shadow: 0 0 20px rgba(0,229,160,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px rgba(0,229,160,0.5);
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(255,77,109,0.1);
+    color: var(--accent3);
+    border: 1px solid rgba(255,77,109,0.3);
+  }
+
+  .btn-danger:hover { background: rgba(255,77,109,0.2); }
+
+  /* CONTENT */
+  .content { padding: 28px; flex:1; }
+
+  /* TABS */
+  .tabs { display:flex; gap:4px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PANELS */
+  .panel { display:none; }
+  .panel.active { display:block; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(10px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: rgba(0,229,160,0.3); }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.08;
+    filter: blur(30px);
+  }
+
+  .stat-card:nth-child(1)::before { background: var(--accent); }
+  .stat-card:nth-child(2)::before { background: var(--accent2); }
+  .stat-card:nth-child(3)::before { background: var(--gold); }
+  .stat-card:nth-child(4)::before { background: var(--accent3); }
+
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+  .stat-trend { font-size: 12px; display:flex; align-items:center; gap:4px; }
+  .trend-up { color: var(--accent); }
+  .trend-down { color: var(--accent3); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* BUSINESS FORM */
+  .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display:flex; flex-direction:column; gap:7px; }
+  .form-group.full { grid-column: span 2; }
+
+  label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.1);
+  }
+
+  textarea { resize: vertical; min-height: 90px; }
+  select option { background: var(--surface2); }
+
+  /* BUSINESS CONNECTED */
+  .business-connected {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: rgba(0,229,160,0.05);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .biz-icon {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    background: var(--surface2);
+    display: flex; align-items:center; justify-content:center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .biz-info { flex:1; }
+  .biz-name { font-family:'Syne',sans-serif; font-weight:700; font-size:16px; margin-bottom:4px; }
+  .biz-meta { font-size: 12px; color: var(--muted); display:flex; gap:12px; }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 5px;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.4; }
+  }
+
+  /* FUNNEL STEPS */
+  .funnel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .funnel-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .funnel-step:hover { border-color: rgba(0,119,255,0.4); }
+  .funnel-step.enabled { border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.04); }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--border);
+    display: flex; align-items:center; justify-content:center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .funnel-step.enabled .step-num {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #060A12;
+  }
+
+  .step-info { flex:1; }
+  .step-name { font-weight: 600; font-size: 14px; margin-bottom:3px; }
+  .step-desc { font-size: 12px; color: var(--muted); }
+
+  .toggle {
+    width: 42px; height: 24px;
+    border-radius: 12px;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: var(--accent); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: white;
+    top: 3px; left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* LEADS TABLE */
+  table { width:100%; border-collapse:collapse; }
+  th {
+    text-align:left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 12px 12px; border-bottom: 1px solid rgba(26,45,69,0.5); font-size: 13px; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .chip-green { background: rgba(0,229,160,0.1); color: var(--accent); }
+  .chip-blue { background: rgba(0,119,255,0.1); color: var(--accent2); }
+  .chip-red { background: rgba(255,77,109,0.1); color: var(--accent3); }
+  .chip-gold { background: rgba(255,184,0,0.1); color: var(--gold); }
+  .chip-gray { background: rgba(107,139,176,0.1); color: var(--muted); }
+
+  /* ACTIVITY FEED */
+  .activity-feed { display:flex; flex-direction:column; gap:10px; }
+
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: 10px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+  }
+
+  .activity-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .act-green { background: rgba(0,229,160,0.1); }
+  .act-blue { background: rgba(0,119,255,0.1); }
+  .act-gold { background: rgba(255,184,0,0.1); }
+  .act-red { background: rgba(255,77,109,0.1); }
+
+  .activity-text { flex:1; line-height:1.5; }
+  .activity-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+  }
+
+  /* TWO COLUMNS */
+  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* NOTIFICATION */
+  #notification {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px var(--glow);
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 360px;
+  }
+
+  #notification.show { transform: translateY(0); opacity: 1; }
+
+  /* AI CHAT */
+  .ai-chat {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .ai-messages {
+    height: 280px;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface2);
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .msg-avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .msg-ai .msg-avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); color:#060A12; }
+  .msg-user .msg-avatar { background: var(--border); }
+  .msg-user { flex-direction: row-reverse; }
+
+  .msg-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .msg-ai .msg-bubble { background: var(--surface); border: 1px solid var(--border); }
+  .msg-user .msg-bubble { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); }
+
+  .ai-input-row {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .ai-input-row input {
+    flex:1;
+    background: var(--surface2);
+  }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,229,160,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: span 1; }
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* METRIC MINI */
+  .mini-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .mini-metric:last-child { border-bottom: none; }
+  .mini-metric-val { font-family:'Syne',sans-serif; font-weight:700; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-title { font-family:'Syne',sans-serif; font-weight:700; font-size:18px; color:var(--text); margin-bottom:8px; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">SaleBot</div>
+        <div class="logo-badge">PRO</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="showNav('dashboard',this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showNav('negocio',this)">
+        <span class="nav-icon">🏪</span> Mi Negocio
+      </div>
+
+      <div class="nav-section">Automatización</div>
+      <div class="nav-item" onclick="showNav('funnel',this)">
+        <span class="nav-icon">🔀</span> Embudo de Ventas
+      </div>
+      <div class="nav-item" onclick="showNav('leads',this)">
+        <span class="nav-icon">👥</span> Leads
+        <span class="nav-badge" id="leadBadge">12</span>
+      </div>
+      <div class="nav-item" onclick="showNav('campanas',this)">
+        <span class="nav-icon">📣</span> Campañas
+      </div>
+
+      <div class="nav-section">IA</div>
+      <div class="nav-item" onclick="showNav('ia',this)">
+        <span class="nav-icon">🤖</span> Agente IA
+      </div>
+      <div class="nav-item" onclick="showNav('contenido',this)">
+        <span class="nav-icon">✍️</span> Contenido
+      </div>
+
+      <div class="nav-section">Analítica</div>
+      <div class="nav-item" onclick="showNav('reportes',this)">
+        <span class="nav-icon">📈</span> Reportes
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="plan-badge">
+        <div class="plan-name">✦ Plan Pro</div>
+        <div style="font-size:11px;color:var(--muted);">12 días restantes · Actualizar</div>
+        <div class="progress-bar" style="margin-top:8px;">
+          <div class="progress-fill" style="width:40%;background:linear-gradient(90deg,var(--gold),#FF8C00);"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="page-title" id="pageTitle">📊 Dashboard</div>
+      <div class="topbar-actions">
+        <div id="autoStatus" style="display:flex;align-items:center;gap:8px;font-size:13px;">
+          <span class="status-dot" id="autoDot" style="display:none;"></span>
+          <span id="autoLabel" style="color:var(--muted);">Automatización: OFF</span>
+        </div>
+        <button class="btn btn-secondary" id="installBtn" style="display:none;" onclick="installApp()">📲 Instalar App</button>
+        <button class="btn btn-primary" id="mainCTA" onclick="handleMainCTA()">⚡ Activar Auto-Venta</button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Ventas Hoy</div>
+            <div class="stat-value" style="color:var(--accent);" id="statVentas">$0</div>
+            <div class="stat-trend trend-up" id="trendVentas">↑ 0% vs ayer</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Leads Nuevos</div>
+            <div class="stat-value" style="color:var(--accent2);" id="statLeads">0</div>
+            <div class="stat-trend trend-up" id="trendLeads">↑ 0 esta semana</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Conversión</div>
+            <div class="stat-value" style="color:var(--gold);" id="statConv">0%</div>
+            <div class="stat-trend" id="trendConv" style="color:var(--muted);">— Sin datos aún</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Mensajes Enviados</div>
+            <div class="stat-value" style="color:var(--accent3);" id="statMsgs">0</div>
+            <div class="stat-trend" style="color:var(--muted);" id="trendMsgs">Agente en espera</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚡ Actividad en Tiempo Real</div>
+              <span class="chip chip-gray" id="actChip">Sin actividad</span>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+              <div class="empty">
+                <div class="empty-icon">💤</div>
+                <div class="empty-title">Agente en reposo</div>
+                <div style="font-size:13px;">Vincula tu negocio y activa la automatización para ver actividad aquí.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🎯 Estado del Embudo</div>
+            </div>
+            <div id="funnelStatus">
+              <div class="empty">
+                <div class="empty-icon">🔀</div>
+                <div class="empty-title">Embudo no configurado</div>
+                <div style="font-size:13px;">Ve a <strong>Embudo de Ventas</strong> para configurar tu flujo automático.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="businessBanner" style="display:none;" class="card" style="border-color:rgba(0,229,160,0.3);">
+          <!-- populated when business linked -->
+        </div>
+      </div>
+
+      <!-- ===== NEGOCIO ===== -->
+      <div class="panel" id="panel-negocio">
+        <div id="bizFormWrap">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏪 Vincular Mi Negocio</div>
+            </div>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Ingresa los datos de tu negocio. La IA usará esta información para vender automáticamente.</p>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre del Negocio</label>
+                <input type="text" id="bizName" placeholder="Ej: Tienda Ropa Moderna" />
+              </div>
+              <div class="form-group">
+                <label>Industria / Sector</label>
+                <select id="bizIndustry">
+                  <option value="">Selecciona tu sector...</option>
+                  <option>Moda y Ropa</option>
+                  <option>Tecnología</option>
+                  <option>Alimentos y Bebidas</option>
+                  <option>Salud y Belleza</option>
+                  <option>Servicios Profesionales</option>
+                  <option>Educación</option>
+                  <option>Bienes Raíces</option>
+                  <option>E-commerce General</option>
+                  <option>Fitness y Bienestar</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label>Descripción del Negocio</label>
+                <textarea id="bizDesc" placeholder="¿Qué vendes? ¿Cuál es tu propuesta de valor? ¿A quién le vendes?"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Producto / Servicio Principal</label>
+                <input type="text" id="bizProduct" placeholder="Ej: Cursos de Marketing Digital" />
+              </div>
+              <div class="form-group">
+                <label>Precio</label>
+                <input type="text" id="bizPrice" placeholder="Ej: $99 USD / $499 MXN" />
+              </div>
+              <div class="form-group">
+                <label>Website / Link de Venta</label>
+                <input type="text" id="bizUrl" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label>WhatsApp de Ventas</label>
+                <input type="text" id="bizWA" placeholder="+52 1 55 0000 0000" />
+              </div>
+              <div class="form-group full">
+                <label>Objeciones Frecuentes (para que la IA las maneje)</label>
+                <textarea id="bizObjecciones" placeholder="Ej: 'Es muy caro' → Respuesta: tenemos plan de pago...&#10;'No tengo tiempo' → Respuesta: el curso es 100% a tu ritmo..." style="min-height:70px;"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;display:flex;gap:12px;">
+              <button class="btn btn-primary" onclick="linkBusiness()">🔗 Vincular Negocio</button>
+              <button class="btn btn-secondary" onclick="fillDemo()">📝 Llenar Demo</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="bizConnected" style="display:none;">
+          <!-- populated after linking -->
+        </div>
+      </div>
+
+      <!-- ===== FUNNEL ===== -->
+      <div class="panel" id="panel-funnel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔀 Embudo de Ventas Automático</div>
+            <button class="btn btn-primary" onclick="saveAndActivateFunnel()">💾 Guardar & Activar</button>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Activa los pasos que quieres automatizar. La IA ejecutará cada uno en secuencia.</p>
+
+          <div class="funnel" id="funnelSteps">
+            <div class="funnel-step enabled" id="fstep1">
+              <div class="step-num">1</div>
+              <div class="step-info">
+                <div class="step-name">🎯 Captura de Lead</div>
+                <div class="step-desc">Detecta y registra nuevos prospectos automáticamente</div>
+              </div>
+              <div class="toggle on" onclick="toggleFunnelStep(1,this)" id="ftoggle1"></div>
+            </div>
+            <div class="funnel-step enabled" id="fstep2">
+              <div class="step-num">2</div>
+              <div class="step-info">
+                <div class="step-name">🤖 Mensaje de Bienvenida IA</div>
+                <div class="step-desc">Saludo personalizado basado en el perfil del lead</div>
+              </div>
+              <div class="toggle on" onclick="toggleFunnelStep(2,this)" id="ftoggle2"></div>
+            </div>
+            <div class="funnel-step enabled" id="fstep3">
+              <div class="step-num">3</div>
+              <div class="step-info">
+                <div class="step-name">📋 Calificación Automática</div>
+                <div class="step-desc">Detecta nivel de interés y poder adquisitivo con IA</div>
+              </div>
+              <div class="toggle on" onclick="toggleFunnelStep(3,this)" id="ftoggle3"></div>
+            </div>
+            <div class="funnel-step" id="fstep4">
+              <div class="step-num">4</div>
+              <div class="step-info">
+                <div class="step-name">🔥 Presentación del Producto</div>
+                <div class="step-desc">Envía contenido y beneficios clave al prospecto</div>
+              </div>
+              <div class="toggle" onclick="toggleFunnelStep(4,this)" id="ftoggle4"></div>
+            </div>
+            <div class="funnel-step" id="fstep5">
+              <div class="step-num">5</div>
+              <div class="step-info">
+                <div class="step-name">💬 Manejo de Objeciones</div>
+                <div class="step-desc">La IA responde dudas y objeciones en tiempo real</div>
+              </div>
+              <div class="toggle" onclick="toggleFunnelStep(5,this)" id="ftoggle5"></div>
+            </div>
+            <div class="funnel-step" id="fstep6">
+              <div class="step-num">6</div>
+              <div class="step-info">
+                <div class="step-name">💳 Oferta y Cierre</div>
+                <div class="step-desc">Genera urgencia y envía link de pago automáticamente</div>
+              </div>
+              <div class="toggle" onclick="toggleFunnelStep(6,this)" id="ftoggle6"></div>
+            </div>
+            <div class="funnel-step" id="fstep7">
+              <div class="step-num">7</div>
+              <div class="step-info">
+                <div class="step-name">🔄 Follow-Up Post-Venta</div>
+                <div class="step-desc">Seguimiento automático 24h, 3 días y 7 días después</div>
+              </div>
+              <div class="toggle" onclick="toggleFunnelStep(7,this)" id="ftoggle7"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⏰ Horario de Automatización</div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Horario de Inicio</label>
+              <input type="time" id="schedStart" value="08:00" />
+            </div>
+            <div class="form-group">
+              <label>Horario de Fin</label>
+              <input type="time" id="schedEnd" value="22:00" />
+            </div>
+            <div class="form-group">
+              <label>Zona Horaria</label>
+              <select>
+                <option>México (GMT-6)</option>
+                <option>Colombia (GMT-5)</option>
+                <option>Argentina (GMT-3)</option>
+                <option>España (GMT+1)</option>
+                <option>EE.UU. - Central (GMT-6)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Respuesta Máx. (minutos)</label>
+              <input type="number" value="5" min="1" max="60" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LEADS ===== -->
+      <div class="panel" id="panel-leads">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Base de Leads</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-secondary" onclick="addFakeLead()">+ Agregar Lead Manual</button>
+              <button class="btn btn-primary" onclick="generateLeads()">🤖 Generar con IA</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Contacto</th>
+                  <th>Origen</th>
+                  <th>Estado</th>
+                  <th>Calificación</th>
+                  <th>Último Contacto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="leadsTable">
+                <tr>
+                  <td colspan="7">
+                    <div class="empty" style="padding:30px 0;">
+                      <div class="empty-icon">👥</div>
+                      <div class="empty-title">Sin leads todavía</div>
+                      <div>Vincula tu negocio para comenzar a capturar leads automáticamente.</div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CAMPAÑAS ===== -->
+      <div class="panel" id="panel-campanas">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📣 Campañas de Ventas</div>
+            <button class="btn btn-primary" onclick="createCampaign()">+ Nueva Campaña</button>
+          </div>
+          <div id="campaignsList">
+            <div class="empty">
+              <div class="empty-icon">📣</div>
+              <div class="empty-title">Sin campañas activas</div>
+              <div>Crea tu primera campaña automática para enviar mensajes masivos.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== IA ===== -->
+      <div class="panel" id="panel-ia">
+        <div class="two-col">
+          <div class="card" style="height:fit-content;">
+            <div class="card-header">
+              <div class="card-title">🤖 Agente de Ventas IA</div>
+              <span class="chip chip-gray" id="agentStatus">Inactivo</span>
+            </div>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Tu agente de ventas inteligente. Chatea con él para configurarlo o ver cómo responderá a tus clientes.</p>
+
+            <div class="ai-chat">
+              <div class="ai-messages" id="chatMessages">
+                <div class="msg msg-ai">
+                  <div class="msg-avatar">⚡</div>
+                  <div class="msg-bubble">¡Hola! Soy tu agente de ventas IA. Vincúlame con tu negocio y podré vender por ti 24/7. ¿Qué quieres configurar primero?</div>
+                </div>
+              </div>
+              <div class="ai-input-row">
+                <input type="text" id="chatInput" placeholder="Pregunta o configura tu agente..." onkeydown="if(event.key==='Enter')sendChat()" />
+                <button class="btn btn-primary" onclick="sendChat()" id="chatBtn">Enviar</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🎭 Personalidad del Agente</div>
+              </div>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="form-group">
+                  <label>Nombre del Agente</label>
+                  <input type="text" id="agentName" placeholder="Ej: Sofía, Max, Alex..." value="Sofía" />
+                </div>
+                <div class="form-group">
+                  <label>Tono de Comunicación</label>
+                  <select id="agentTone">
+                    <option>Profesional y Confiable</option>
+                    <option>Amigable y Cercano</option>
+                    <option>Urgente y Persuasivo</option>
+                    <option>Consultivo y Educativo</option>
+                    <option>Entusiasta y Energético</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Idioma Principal</label>
+                  <select>
+                    <option>Español</option>
+                    <option>Inglés</option>
+                    <option>Español + Inglés (bilingüe)</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-primary" style="margin-top:16px;width:100%;" onclick="saveAgent()">💾 Guardar Agente</button>
+            </div>
+
+            <div class="card" style="margin-top:0;">
+              <div class="card-header">
+                <div class="card-title">📊 Rendimiento del Agente</div>
+              </div>
+              <div class="mini-metric">
+                <span>Conversaciones hoy</span>
+                <span class="mini-metric-val" id="agConv" style="color:var(--accent2);">0</span>
+              </div>
+              <div class="mini-metric">
+                <span>Cierres automáticos</span>
+                <span class="mini-metric-val" id="agClose" style="color:var(--accent);">0</span>
+              </div>
+              <div class="mini-metric">
+                <span>Objeciones manejadas</span>
+                <span class="mini-metric-val" id="agObj" style="color:var(--gold);">0</span>
+              </div>
+              <div class="mini-metric">
+                <span>Tasa de respuesta</span>
+                <span class="mini-metric-val" id="agResp" style="color:var(--accent3);">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONTENIDO ===== -->
+      <div class="panel" id="panel-contenido">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✍️ Generador de Contenido de Ventas</div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tipo de Contenido</label>
+              <select id="contentType">
+                <option>Post para Redes Sociales</option>
+                <option>Email de Ventas</option>
+                <option>Mensaje de WhatsApp</option>
+                <option>Guión de Video</option>
+                <option>Anuncio Pagado</option>
+                <option>Carta de Ventas VSL</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Objetivo</label>
+              <select id="contentGoal">
+                <option>Generar Leads</option>
+                <option>Cerrar Venta Directa</option>
+                <option>Nutrir Prospectos</option>
+                <option>Reactivar Leads Fríos</option>
+                <option>Lanzamiento de Producto</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Contexto Adicional</label>
+              <textarea id="contentContext" placeholder="Agrega detalles específicos, promociones, deadline, etc."></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="generateContent()" id="genContentBtn">🤖 Generar con IA</button>
+
+          <div id="contentResult" style="display:none;margin-top:20px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">✨ Contenido Generado</div>
+                <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="copyContent()">📋 Copiar</button>
+              </div>
+              <div id="contentText" style="font-size:14px;line-height:1.7;white-space:pre-wrap;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REPORTES ===== -->
+      <div class="panel" id="panel-reportes">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Revenue Total</div>
+            <div class="stat-value" style="color:var(--accent);" id="repRevenue">$0</div>
+            <div class="stat-trend" style="color:var(--muted);">Desde que vinculaste</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Leads</div>
+            <div class="stat-value" style="color:var(--accent2);" id="repLeads">0</div>
+            <div class="stat-trend" style="color:var(--muted);">Acumulado</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ventas Cerradas</div>
+            <div class="stat-value" style="color:var(--gold);" id="repVentas">0</div>
+            <div class="stat-trend" style="color:var(--muted);">Por la IA</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">ROI Estimado</div>
+            <div class="stat-value" style="color:var(--accent3);" id="repROI">—</div>
+            <div class="stat-trend" style="color:var(--muted);">vs inversión</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📅 Actividad Semanal</div>
+          </div>
+          <div id="weekChart" style="display:flex;align-items:flex-end;gap:12px;height:120px;padding:0 8px;">
+            <!-- bars generated by JS -->
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;padding:0 8px;">
+            <span style="font-size:11px;color:var(--muted);">Lun</span>
+            <span style="font-size:11px;color:var(--muted);">Mar</span>
+            <span style="font-size:11px;color:var(--muted);">Mié</span>
+            <span style="font-size:11px;color:var(--muted);">Jue</span>
+            <span style="font-size:11px;color:var(--muted);">Vie</span>
+            <span style="font-size:11px;color:var(--muted);">Sáb</span>
+            <span style="font-size:11px;color:var(--muted);">Dom</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+  </main>
+</div>
+
+<!-- NOTIFICATION -->
+<div id="notification">
+  <span id="notifIcon">✅</span>
+  <span id="notifText">Acción realizada</span>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  businessLinked: false,
+  autoEnabled: false,
+  business: {},
+  leads: [],
+  funnelActive: false,
+  funnelSteps: {1:true,2:true,3:true,4:false,5:false,6:false,7:false},
+  stats: { ventas: 0, leads: 0, conv: 0, msgs: 0 },
+  agent: { name: 'Sofía', tone: 'Profesional y Confiable' },
+  chatHistory: [],
+  interval: null,
+};
+
+// ============================================================
+// NAV
+// ============================================================
+function showNav(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  el.classList.add('active');
+  const titles = {
+    dashboard: '📊 Dashboard',
+    negocio: '🏪 Mi Negocio',
+    funnel: '🔀 Embudo de Ventas',
+    leads: '👥 Leads',
+    campanas: '📣 Campañas',
+    ia: '🤖 Agente IA',
+    contenido: '✍️ Generador de Contenido',
+    reportes: '📈 Reportes',
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+
+  if (id === 'reportes') renderWeekChart();
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function notify(text, icon = '✅') {
+  const n = document.getElementById('notification');
+  document.getElementById('notifText').textContent = text;
+  document.getElementById('notifIcon').textContent = icon;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3500);
+}
+
+// ============================================================
+// BUSINESS LINKING
+// ============================================================
+function fillDemo() {
+  document.getElementById('bizName').value = 'Tu Negocio Aquí';
+  document.getElementById('bizIndustry').value = 'Educación';
+  document.getElementById('bizDesc').value = 'Describe aquí qué hace tu negocio y a quién va dirigido.';
+  document.getElementById('bizProduct').value = 'Tu Producto o Servicio Principal';
+  document.getElementById('bizPrice').value = '$XX USD / descripción del precio';
+  document.getElementById('bizUrl').value = 'https://tu-sitio-web.com';
+  document.getElementById('bizWA').value = '+1 000 000 0000';
+  document.getElementById('bizObjecciones').value = '"Es caro" → Tenemos plan 3 pagos de $67\n"No tengo tiempo" → Acceso 12 meses, estudia a tu ritmo\n"No sé si funciona" → Garantía 30 días devolución';
+}
+
+function linkBusiness() {
+  const name = document.getElementById('bizName').value.trim();
+  const industry = document.getElementById('bizIndustry').value;
+  const desc = document.getElementById('bizDesc').value.trim();
+  const product = document.getElementById('bizProduct').value.trim();
+  const price = document.getElementById('bizPrice').value.trim();
+
+  if (!name || !industry || !product) {
+    notify('Completa al menos Nombre, Industria y Producto.', '⚠️');
+    return;
+  }
+
+  state.business = {
+    name, industry, desc, product, price,
+    url: document.getElementById('bizUrl').value,
+    wa: document.getElementById('bizWA').value,
+    objecciones: document.getElementById('bizObjecciones').value,
+  };
+  state.businessLinked = true;
+
+  document.getElementById('bizFormWrap').style.display = 'none';
+  document.getElementById('bizConnected').style.display = 'block';
+  document.getElementById('bizConnected').innerHTML = `
+    <div class="business-connected">
+      <div class="biz-icon">🏪</div>
+      <div class="biz-info">
+        <div class="biz-name"><span class="status-dot"></span>${name}</div>
+        <div class="biz-meta">
+          <span>📂 ${industry}</span>
+          <span>💰 ${price || 'Precio no definido'}</span>
+          <span>🔗 ${state.business.url || 'Sin URL'}</span>
+        </div>
+        <div style="margin-top:8px;">
+          <span class="chip chip-green">✅ Negocio Vinculado</span>
+          <span class="chip chip-blue" style="margin-left:6px;">🤖 IA Lista</span>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="unlinkBusiness()">✕ Desvincular</button>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title" style="margin-bottom:14px;">📦 Producto: ${product}</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">${desc || 'Sin descripción'}</p>
+      ${state.business.wa ? `<div style="margin-top:12px;"><span class="chip chip-green">📱 WhatsApp: ${state.business.wa}</span></div>` : ''}
+    </div>
+  `;
+
+  renderDashboardBusiness();
+  notify(`✅ ¡${name} vinculado! La IA ya conoce tu negocio.`, '🏪');
+}
+
+function unlinkBusiness() {
+  state.businessLinked = false;
+  state.business = {};
+  if (state.autoEnabled) toggleAuto(false);
+  document.getElementById('bizFormWrap').style.display = 'block';
+  document.getElementById('bizConnected').style.display = 'none';
+  notify('Negocio desvinculado.', 'ℹ️');
+}
+
+function renderDashboardBusiness() {
+  const b = document.getElementById('businessBanner');
+  b.style.display = 'block';
+  b.style.borderColor = 'rgba(0,229,160,0.3)';
+  b.innerHTML = `
+    <div class="card-header">
+      <div class="card-title">🏪 Negocio Activo: ${state.business.name}</div>
+      <span class="chip chip-green"><span class="status-dot"></span> Conectado</span>
+    </div>
+    <div style="font-size:13px;color:var(--muted);">
+      Producto: <strong style="color:var(--text);">${state.business.product}</strong> · 
+      Precio: <strong style="color:var(--accent);">${state.business.price}</strong>
+    </div>
+  `;
+}
+
+// ============================================================
+// AUTO-SELL
+// ============================================================
+function handleMainCTA() {
+  if (!state.businessLinked) {
+    notify('Primero vincula tu negocio 🏪', '⚠️');
+    document.querySelectorAll('.nav-item')[1].click();
+    return;
+  }
+  toggleAuto(!state.autoEnabled);
+}
+
+function toggleAuto(on) {
+  state.autoEnabled = on;
+  const btn = document.getElementById('mainCTA');
+  const dot = document.getElementById('autoDot');
+  const label = document.getElementById('autoLabel');
+
+  if (on) {
+    btn.innerHTML = '⏹ Detener Auto-Venta';
+    btn.style.background = 'linear-gradient(135deg,var(--accent3),#CC0033)';
+    btn.style.boxShadow = '0 0 20px rgba(255,77,109,0.3)';
+    dot.style.display = 'inline-block';
+    label.style.color = 'var(--accent)';
+    label.textContent = 'Automatización: ACTIVA';
+    notify(`🚀 ¡Auto-venta activada! ${state.agent.name} está vendiendo por ti.`, '⚡');
+    startAutoSimulation();
+  } else {
+    btn.innerHTML = '⚡ Activar Auto-Venta';
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+    dot.style.display = 'none';
+    label.style.color = 'var(--muted)';
+    label.textContent = 'Automatización: OFF';
+    stopAutoSimulation();
+  }
+}
+
+// ============================================================
+// SIMULATION
+// ============================================================
+const NAMES = ['Carlos Mendoza','Ana García','Luis Torres','María López','Roberto Sánchez','Valentina Cruz','Diego Herrera','Sofía Ramírez','Javier Moreno','Isabella Castro'];
+const ORIGINS = ['Instagram','Facebook','WhatsApp','Google','TikTok','Referido','LinkedIn'];
+const ACTIONS = [
+  (n,b) => ({ text: `${n} vio tu anuncio en ${ORIGINS[Math.floor(Math.random()*ORIGINS.length)]}`, icon:'👁', cls:'act-blue' }),
+  (n,b) => ({ text: `${n} respondió al mensaje de ${state.agent.name}`, icon:'💬', cls:'act-green' }),
+  (n,b) => ({ text: `${n} preguntó: "¿${b.product} tiene garantía?"`, icon:'❓', cls:'act-blue' }),
+  (n,b) => ({ text: `${state.agent.name} manejó objeción de ${n}: "Es caro" → Ofreció plan de pago`, icon:'🤖', cls:'act-gold' }),
+  (n,b) => ({ text: `${n} abrió el link de pago de ${b.product}`, icon:'💳', cls:'act-green' }),
+  (n,b) => ({ text: `¡${n} completó la compra! +${b.price}`, icon:'🎉', cls:'act-gold' }),
+  (n,b) => ({ text: `${n} calificado como lead caliente por la IA`, icon:'🔥', cls:'act-red' }),
+  (n,b) => ({ text: `${state.agent.name} envió follow-up a ${n}`, icon:'📩', cls:'act-blue' }),
+];
+
+function startAutoSimulation() {
+  // Add 3 initial leads
+  for (let i = 0; i < 3; i++) setTimeout(() => simulateLead(), i * 800);
+  state.interval = setInterval(() => {
+    if (Math.random() > 0.4) simulateLead();
+    if (Math.random() > 0.5) simulateAction();
+    updateStats();
+  }, 3500);
+  updateFunnelDashStatus();
+}
+
+function stopAutoSimulation() {
+  clearInterval(state.interval);
+  state.interval = null;
+  document.getElementById('actChip').className = 'chip chip-gray';
+  document.getElementById('actChip').textContent = 'Detenido';
+}
+
+function simulateLead() {
+  const n = NAMES[Math.floor(Math.random() * NAMES.length)];
+  const origin = ORIGINS[Math.floor(Math.random() * ORIGINS.length)];
+  const score = Math.floor(Math.random() * 40) + 60;
+  const statuses = ['Nuevo','Contactado','Calificado','Oferta Enviada','Cerrado'];
+  const status = statuses[Math.floor(Math.random() * 3)];
+
+  const lead = { name: n, contact: `+52 1 ${Math.floor(Math.random()*900+100)} ${Math.floor(Math.random()*9000+1000)} ${Math.floor(Math.random()*9000+1000)}`, origin, status, score, time: 'Hace unos segundos' };
+  state.leads.unshift(lead);
+  if (state.leads.length > 20) state.leads.pop();
+  state.stats.leads++;
+
+  renderLeadsTable();
+  document.getElementById('leadBadge').textContent = state.leads.length;
+  document.getElementById('statLeads').textContent = state.stats.leads;
+  document.getElementById('trendLeads').textContent = `↑ ${state.stats.leads} esta semana`;
+
+  addActivity({ text: `Nuevo lead capturado: ${n} (${origin})`, icon:'🎯', cls:'act-green' });
+}
+
+function simulateAction() {
+  const n = NAMES[Math.floor(Math.random() * NAMES.length)];
+  const actionFn = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+  const action = actionFn(n, state.business);
+  addActivity(action);
+
+  if (action.icon === '🎉') {
+    const priceNum = parseInt((state.business.price || '$50').replace(/\D/g,'')) || 50;
+    state.stats.ventas += priceNum;
+    document.getElementById('statVentas').textContent = '$' + state.stats.ventas.toLocaleString();
+    document.getElementById('trendVentas').textContent = `↑ ${Math.floor(Math.random()*40+10)}% vs ayer`;
+    document.getElementById('trendVentas').className = 'stat-trend trend-up';
+    document.getElementById('repRevenue').textContent = '$' + state.stats.ventas.toLocaleString();
+    const cv = Math.floor((state.stats.ventas / Math.max(state.stats.leads,1)) * 100) / 100;
+    document.getElementById('repVentas').textContent = Math.floor(state.stats.ventas / (parseInt((state.business.price||'50').replace(/\D/g,''))||50));
+  }
+
+  state.stats.msgs++;
+  document.getElementById('statMsgs').textContent = state.stats.msgs;
+  document.getElementById('trendMsgs').textContent = `${state.agent.name} activo`;
+  document.getElementById('trendMsgs').style.color = 'var(--accent)';
+
+  const convRate = Math.floor(Math.random() * 15 + 5);
+  document.getElementById('statConv').textContent = convRate + '%';
+  document.getElementById('trendConv').textContent = convRate > 10 ? `↑ Por encima del promedio` : `→ Promedio del sector`;
+  document.getElementById('trendConv').className = 'stat-trend ' + (convRate > 10 ? 'trend-up' : '');
+
+  document.getElementById('agConv').textContent = parseInt(document.getElementById('agConv').textContent||'0') + 1;
+  if (Math.random() > 0.6) document.getElementById('agObj').textContent = parseInt(document.getElementById('agObj').textContent||'0') + 1;
+  document.getElementById('agResp').textContent = Math.floor(Math.random()*3+1) + ' min';
+  document.getElementById('agentStatus').textContent = 'Activo';
+  document.getElementById('agentStatus').className = 'chip chip-green';
+
+  document.getElementById('repLeads').textContent = state.stats.leads;
+  const roi = state.stats.ventas > 0 ? (state.stats.ventas / 97 * 100).toFixed(0) + '%' : '—';
+  document.getElementById('repROI').textContent = roi;
+}
+
+function updateStats() {
+  // just cosmetic
+}
+
+function addActivity(item) {
+  const feed = document.getElementById('activityFeed');
+  if (feed.querySelector('.empty')) feed.innerHTML = '';
+
+  document.getElementById('actChip').className = 'chip chip-green';
+  document.getElementById('actChip').innerHTML = '<span class="status-dot"></span> En vivo';
+
+  const el = document.createElement('div');
+  el.className = 'activity-item';
+  el.style.animation = 'fadeUp 0.3s ease';
+  el.innerHTML = `
+    <div class="activity-icon ${item.cls}">${item.icon}</div>
+    <div class="activity-text">
+      ${item.text}
+      <div class="activity-time">⏱ Ahora mismo · ${state.agent.name}</div>
+    </div>
+  `;
+  feed.insertBefore(el, feed.firstChild);
+  if (feed.children.length > 8) feed.removeChild(feed.lastChild);
+}
+
+// ============================================================
+// LEADS TABLE
+// ============================================================
+function renderLeadsTable() {
+  const tb = document.getElementById('leadsTable');
+  if (state.leads.length === 0) {
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty" style="padding:30px 0;"><div class="empty-icon">👥</div><div class="empty-title">Sin leads todavía</div></div></td></tr>`;
+    return;
+  }
+  const statusMap = {
+    'Nuevo': 'chip-gray',
+    'Contactado': 'chip-blue',
+    'Calificado': 'chip-gold',
+    'Oferta Enviada': 'chip-blue',
+    'Cerrado': 'chip-green',
+    'Perdido': 'chip-red',
+  };
+  tb.innerHTML = state.leads.map((l,i) => `
+    <tr>
+      <td><strong>${l.name}</strong></td>
+      <td style="color:var(--muted);font-size:12px;">${l.contact}</td>
+      <td><span class="chip chip-gray">${l.origin}</span></td>
+      <td><span class="chip ${statusMap[l.status]||'chip-gray'}">${l.status}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;min-width:60px;">
+            <div style="width:${l.score}%;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;"></div>
+          </div>
+          <span style="font-size:12px;color:var(--muted);">${l.score}</span>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--muted);">${l.time}</td>
+      <td>
+        <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="contactLead(${i})">💬</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function addFakeLead() {
+  simulateLead();
+  notify('Lead agregado manualmente', '👤');
+}
+
+function generateLeads() {
+  if (!state.businessLinked) { notify('Vincula tu negocio primero', '⚠️'); return; }
+  notify('🤖 IA buscando leads relevantes...', '🔍');
+  setTimeout(() => {
+    for (let i = 0; i < 5; i++) simulateLead();
+    notify('✅ 5 leads generados por la IA', '🎯');
+  }, 2000);
+}
+
+function contactLead(i) {
+  const l = state.leads[i];
+  if (l) {
+    state.leads[i].status = 'Contactado';
+    renderLeadsTable();
+    notify(`${state.agent.name} contactó a ${l.name} ✉️`, '🤖');
+  }
+}
+
+// ============================================================
+// FUNNEL
+// ============================================================
+function toggleFunnelStep(num, toggle) {
+  const on = !state.funnelSteps[num];
+  state.funnelSteps[num] = on;
+  toggle.classList.toggle('on', on);
+  document.getElementById('fstep'+num).classList.toggle('enabled', on);
+}
+
+function saveAndActivateFunnel() {
+  state.funnelActive = true;
+  notify('✅ Embudo guardado y activado', '🔀');
+  updateFunnelDashStatus();
+}
+
+function updateFunnelDashStatus() {
+  const el = document.getElementById('funnelStatus');
+  const active = Object.values(state.funnelSteps).filter(v=>v).length;
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${[1,2,3,4,5,6,7].map(n => `
+        <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${state.funnelSteps[n]?'var(--accent)':'var(--border)'};${state.funnelSteps[n]?'box-shadow:0 0 6px var(--accent);':''}"></div>
+          <span style="color:${state.funnelSteps[n]?'var(--text)':'var(--muted)'}">Paso ${n}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:14px;"><span class="chip chip-green">${active}/7 pasos activos</span></div>
+  `;
+}
+
+// ============================================================
+// CAMPAIGNS
+// ============================================================
+function createCampaign() {
+  if (!state.businessLinked) { notify('Vincula tu negocio primero', '⚠️'); return; }
+  const list = document.getElementById('campaignsList');
+  const names = ['Campaña Lanzamiento', 'Reactivación Leads Fríos', 'Black Friday', 'Campaña Urgencia'];
+  const name = names[Math.floor(Math.random() * names.length)] + ' #' + Math.floor(Math.random()*99+1);
+  list.innerHTML = (list.querySelector('.empty') ? '' : list.innerHTML) + `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,119,255,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">📣</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;margin-bottom:3px;">${name}</div>
+        <div style="font-size:12px;color:var(--muted);">Segmento: Todos los leads · ${Math.floor(Math.random()*500+50)} destinatarios</div>
+      </div>
+      <span class="chip chip-blue">Programada</span>
+      <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="launchCampaign(this)">▶ Lanzar</button>
+    </div>
+  `;
+  notify(`✅ Campaña "${name}" creada`, '📣');
+}
+
+function launchCampaign(btn) {
+  btn.previousElementSibling.className = 'chip chip-green';
+  btn.previousElementSibling.textContent = '🟢 Activa';
+  btn.textContent = '⏹ Detener';
+  btn.className = 'btn btn-danger';
+  btn.style.fontSize = '12px';
+  btn.style.padding = '7px 14px';
+  notify('🚀 Campaña lanzada! Enviando mensajes...', '📣');
+  state.stats.msgs += Math.floor(Math.random() * 100 + 20);
+  document.getElementById('statMsgs').textContent = state.stats.msgs;
+}
+
+// ============================================================
+// AI CHAT
+// ============================================================
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addMessage('user', msg);
+
+  const btn = document.getElementById('chatBtn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  const systemPrompt = `Eres ${state.agent.name}, un agente de ventas IA experto y ${state.agent.tone.toLowerCase()}. 
+${state.businessLinked ? `Trabajas para: ${state.business.name}. Vendes: ${state.business.product} a ${state.business.price}. Descripción: ${state.business.desc}` : 'Aún no tienes un negocio vinculado. Anima al usuario a vincular su negocio.'}
+Responde en español, de forma concisa (máx 3 oraciones). Enfócate en ventas y automatización.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [
+          ...state.chatHistory.slice(-6),
+          { role: 'user', content: msg }
+        ]
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || '¡Entendido! Estoy listo para ayudarte a vender.';
+    addMessage('ai', reply);
+    state.chatHistory.push({ role:'user', content:msg }, { role:'assistant', content:reply });
+  } catch {
+    addMessage('ai', '¡Estoy listo! Una vez que vincules tu negocio, podré responder a tus clientes automáticamente 24/7.');
+  }
+
+  btn.innerHTML = 'Enviar';
+  btn.disabled = false;
+}
+
+function addMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const isAI = role === 'ai';
+  const el = document.createElement('div');
+  el.className = `msg msg-${role}`;
+  el.innerHTML = `
+    <div class="msg-avatar">${isAI ? '⚡' : '👤'}</div>
+    <div class="msg-bubble">${text}</div>
+  `;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================
+// AGENT
+// ============================================================
+function saveAgent() {
+  state.agent.name = document.getElementById('agentName').value || 'Sofía';
+  state.agent.tone = document.getElementById('agentTone').value;
+  notify(`✅ Agente "${state.agent.name}" guardado con tono: ${state.agent.tone}`, '🤖');
+}
+
+// ============================================================
+// CONTENT GENERATION
+// ============================================================
+async function generateContent() {
+  if (!state.businessLinked) { notify('Vincula tu negocio primero', '⚠️'); return; }
+  const type = document.getElementById('contentType').value;
+  const goal = document.getElementById('contentGoal').value;
+  const ctx = document.getElementById('contentContext').value;
+  const btn = document.getElementById('genContentBtn');
+  btn.innerHTML = '<span class="spinner"></span> Generando...';
+  btn.disabled = true;
+
+  const prompt = `Eres un experto en copywriting de ventas en español.
+Negocio: ${state.business.name}
+Producto: ${state.business.product} (${state.business.price})
+Descripción: ${state.business.desc}
+Tipo de contenido: ${type}
+Objetivo: ${goal}
+${ctx ? 'Contexto adicional: ' + ctx : ''}
+
+Genera el contenido de ventas optimizado. Sé directo, persuasivo y usa emojis estratégicamente. Incluye CTA claro.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        messages: [{ role:'user', content:prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || 'Error generando contenido.';
+    document.getElementById('contentText').textContent = text;
+    document.getElementById('contentResult').style.display = 'block';
+    notify('✅ Contenido generado con IA', '✍️');
+  } catch {
+    document.getElementById('contentText').textContent = `🚀 ¡${state.business.product} que estabas esperando!\n\n✅ Aprende desde CERO y en tu tiempo\n💰 Solo ${state.business.price}\n🔥 Plazas limitadas\n\n👉 Inscríbete ahora: ${state.business.url || '[tu link aquí]'}`;
+    document.getElementById('contentResult').style.display = 'block';
+    notify('✅ Contenido generado', '✍️');
+  }
+
+  btn.innerHTML = '🤖 Generar con IA';
+  btn.disabled = false;
+}
+
+function copyContent() {
+  const text = document.getElementById('contentText').textContent;
+  navigator.clipboard.writeText(text).then(() => notify('¡Copiado al portapapeles!', '📋'));
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function renderWeekChart() {
+  const wrap = document.getElementById('weekChart');
+  const days = [0,0,0,0,0,0,0];
+  if (state.autoEnabled) {
+    for (let i=0;i<7;i++) days[i] = Math.floor(Math.random()*90+10);
+  }
+  const max = Math.max(...days, 10);
+  wrap.innerHTML = days.map((v,i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div style="font-size:11px;color:var(--muted);">${v>0?'$'+v:''}</div>
+      <div style="width:100%;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:4px 4px 0 0;height:${Math.max(v/max*100,2)}%;transition:height 0.5s ease;opacity:${v>0?1:0.2};"></div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderWeekChart();
+});
+</script>
+</body>
+</html>
+<script>
+// PWA INSTALL
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+  notify('✅ ¡SaleBot Pro instalado como app!', '📲');
+});
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') notify('🎉 ¡App instalada!', '📲');
+      deferredPrompt = null;
+    });
+  } else { showInstallGuide(); }
+}
+function showInstallGuide() {
+  const existing = document.getElementById('installModal');
+  if (existing) { existing.remove(); return; }
+  const modal = document.createElement('div');
+  modal.id = 'installModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px);animation:fadeUp 0.3s ease;';
+  modal.innerHTML = `
+    <div style="background:#0D1520;border:1px solid #1A2D45;border-radius:20px;padding:32px;max-width:500px;width:100%;position:relative;max-height:90vh;overflow-y:auto;">
+      <button onclick="document.getElementById('installModal').remove()" style="position:absolute;top:16px;right:16px;background:#111D2E;border:1px solid #1A2D45;border-radius:8px;color:#6B8BB0;font-size:16px;cursor:pointer;width:32px;height:32px;">✕</button>
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;">📲 Instalar SaleBot Pro</div>
+      <div style="font-size:13px;color:#6B8BB0;margin-bottom:24px;">Instala la app en tu dispositivo para usarla como una aplicación nativa, sin abrir el navegador.</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:#111D2E;border:1px solid #00E5A030;border-radius:12px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:10px;color:#00E5A0;">🤖 Android (Chrome)</div>
+          <ol style="font-size:13px;color:#E8F0FE;line-height:2.2;padding-left:18px;margin:0;">
+            <li>Descarga el archivo <strong>.html</strong> en tu teléfono</li>
+            <li>Ábrelo con <strong>Google Chrome</strong></li>
+            <li>Toca <strong>⋮ menú → "Añadir a pantalla de inicio"</strong></li>
+            <li>Toca <strong>"Añadir"</strong> para confirmar ✅</li>
+          </ol>
+        </div>
+        <div style="background:#111D2E;border:1px solid #0077FF30;border-radius:12px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:10px;color:#0077FF;">🍎 iPhone / iPad (Safari)</div>
+          <ol style="font-size:13px;color:#E8F0FE;line-height:2.2;padding-left:18px;margin:0;">
+            <li>Descarga el archivo y ábrelo con <strong>Safari</strong></li>
+            <li>Toca el botón <strong>□↑ Compartir</strong></li>
+            <li>Desliza y toca <strong>"Añadir a pantalla de inicio"</strong></li>
+            <li>Toca <strong>"Añadir"</strong> ✅</li>
+          </ol>
+        </div>
+        <div style="background:#111D2E;border:1px solid #FFB80030;border-radius:12px;padding:16px;">
+          <div style="font-weight:700;margin-bottom:10px;color:#FFB800;">💻 PC / Mac (Chrome o Edge)</div>
+          <ol style="font-size:13px;color:#E8F0FE;line-height:2.2;padding-left:18px;margin:0;">
+            <li>Abre el archivo en <strong>Chrome o Edge</strong></li>
+            <li>Busca el ícono <strong>⊕</strong> en la barra de dirección</li>
+            <li>Clic en <strong>"Instalar SaleBot Pro"</strong></li>
+            <li>¡Aparece como app en tu escritorio! 🖥️</li>
+          </ol>
+        </div>
+        <div style="padding:14px;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:10px;font-size:13px;color:#00E5A0;line-height:1.6;">
+          💡 <strong>Alternativa rápida:</strong> Simplemente guarda el archivo <strong>saleads-pro.html</strong> en tu computadora. Funciona 100% sin internet — ábrelo con doble clic siempre que quieras.
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+// Show install button after 1.5s
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = 'inline-flex';
+  }, 1500);
+});
+</script>
